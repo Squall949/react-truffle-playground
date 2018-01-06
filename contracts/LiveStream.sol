@@ -1,18 +1,14 @@
 pragma solidity ^0.4.18;
 
 contract LiveStream {
-    uint budget;
     mapping(bytes32 => address) mySubscription;
-
-    function getBudget() public view returns (uint) {
-        return budget;
-    }
 
     function getMySubscription(bytes32 userId) public view returns (address) {
         return mySubscription[userId];
     }
 
-    function subscribe(bytes32 userId) public {
+    function subscribe(bytes32 userId) public returns (bytes32) {
         mySubscription[userId] = msg.sender;
+        return userId;
     }
 }

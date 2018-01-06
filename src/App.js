@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import SimpleStorageContract from '../build/contracts/SimpleStorage.json'
 import LiveStreamContract from '../build/contracts/LiveStream.json'
 import getWeb3 from './utils/getWeb3'
-import Streams from './Streams'
+import Stream from './Stream'
+import { Card } from 'semantic-ui-react'
 
 import './css/oswald.css'
 import './css/open-sans.css'
@@ -16,9 +16,11 @@ class App extends Component {
     this.state = {
       accounts: null,
       web3: null,
-      liveStreamInstance: null,
+      liveStream: null,
       streams: [],
-      usersNames: new Map()
+      usersNames: new Map(),    //user_id / display_name
+      userIndex: new Map(),     //user_id / index
+      isSubscribed: new Map()   //user_id / address
     }
   }
 
@@ -41,53 +43,16 @@ class App extends Component {
   }
 
   instantiateContract() {
-    /*
-     * SMART CONTRACT EXAMPLE
-     *
-     * Normally these functions would be called in the context of a
-     * state management library, but for convenience I've placed them here.
-     */
-
-    /*const contract = require('truffle-contract')
-    const simpleStorage = contract(SimpleStorageContract)
-    simpleStorage.setProvider(this.state.web3.currentProvider)
-
-    // Declaring this for later so we can chain functions on SimpleStorage.
-    var simpleStorageInstance
-
-    // Get accounts.
-    this.state.web3.eth.getAccounts((error, accounts) => {
-      simpleStorage.deployed().then((instance) => {
-        simpleStorageInstance = instance
-
-        // Stores a given value, 5 by default.
-        return simpleStorageInstance.set(5, {from: accounts[0]})
-      }).then((result) => {
-        // Get the value from the contract to prove it worked.
-        return simpleStorageInstance.get.call(accounts[0])
-      }).then((result) => {
-        // Update state with the result.
-        return this.setState({ storageValue: result.c[0] })
-      })
-    });*/
-
-    /* 
-    * Main: Live Stream
-    */
-
     const contract = require('truffle-contract');
     const liveStream = contract(LiveStreamContract);
     liveStream.setProvider(this.state.web3.currentProvider);
-
-    liveStream.deployed().then((instance) => {
-      this.setState({ liveStreamInstance: instance });
-    });
+    this.setState({ liveStream });
 
     this.state.web3.eth.getAccounts((error, accounts) => {
       if (error) {
         console.log(error);
       }
-      console.log(accounts);
+      
       this.setState({accounts});
     });
   }
@@ -118,20 +83,26 @@ class App extends Component {
       .then((resp) => resp.json())
       .then((result) => {
         this.state.usersNames.set(user.user_id, result.data[0].display_name);
-        this.setState({ usersNames: this.state.usersNames });
+        this.state.isSubscribed.set(user.user_id, false);
       });
-    } 
+    }
+    
+    this.setState({ usersNames: this.state.usersNames });
+    this.setState({ isSubscribed: this.state.isSubscribed });
   }
 
-  subscribe = (userId) => {
+  subscribe = (userId, value, index) => {
     const account = this.state.accounts[0];
 
-    this.state.liveStreamInstance.subscribe(userId, {from: account})
-      .then(function(result) {
-        console.log(result);
-      }).catch(function(err) {
-        console.log(err.message);
-      });
+    this.state.liveStream.deployed().then((instance) => {
+      // Since the owner is Account 1 (at array 0), the rest accounts starting from array 1, so the index of each stream should add 1
+      this.state.web3.eth.sendTransaction({from: account, to: this.state.accounts[index+1], value: this.state.web3.toWei(value, "ether")}, (error, result) => {
+        return instance.subscribe(userId, {from: account});
+      })
+    }).then((result) => {
+      this.state.isSubscribed.set(userId, true);
+      this.setState({ isSubscribed: this.state.isSubscribed });
+    });
   }
 
   render() {
@@ -140,7 +111,22 @@ class App extends Component {
         <nav className="navbar pure-menu pure-menu-horizontal">
             <a href="#" className="pure-menu-heading pure-menu-link">LiveStream Blockchain</a>
         </nav>
-        <Streams streams={this.state.streams} usersNames={this.state.usersNames} subscribe={this.subscribe} />
+        <main className="ui cards fluid container main-container">
+            <Card.Group itemsPerRow="2">
+                {this.state.streams.map((stream, index) => (
+                  <Stream key={stream.id} 
+                  usersName={this.state.usersNames.get(stream.user_id)} 
+                  imgSrc={stream.thumbnail_url.replace('{width}x{height}', '640x480')}
+                  index={index} 
+                  title={stream.title}
+                  started_at={stream.started_at}
+                  viewer_count={stream.viewer_count}
+                  user_id={stream.user_id}
+                  subscribe={this.subscribe} 
+                  isSubscribed={this.state.isSubscribed} />
+                ))}
+            </Card.Group>
+        </main>
       </div>
     );
   }
