@@ -1,10 +1,6 @@
----
-
----
-
 # Live Stream DApp
 
-### This is just a side project to get to know the implementation of DApp, assuming there are Twitch live streams, and anyone can subscribes the players and gives them Ether.
+### This is just a side project to get to know the implementation of Ethereum DApp, assuming there are Twitch live streams, and anyone can subscribes the players and gives them Ether.
 
 
 
