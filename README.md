@@ -57,3 +57,4 @@
 - web3 js
 - Twitch API
 - Semantic UI React
+- redux

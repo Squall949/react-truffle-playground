@@ -3,6 +3,7 @@ import LiveStreamContract from '../build/contracts/LiveStream.json'
 import getWeb3 from './utils/getWeb3'
 import Stream from './Stream'
 import { Card } from 'semantic-ui-react'
+import { connect } from 'react-redux'
 
 import './css/oswald.css'
 import './css/open-sans.css'
@@ -20,7 +21,7 @@ class App extends Component {
       streams: [],
       usersNames: new Map(),    //user_id / display_name
       userIndex: new Map(),     //user_id / index
-      isSubscribed: new Map()   //user_id / address
+      //isSubscribed: new Map()   //user_id / address
     }
   }
 
@@ -83,12 +84,13 @@ class App extends Component {
       .then((resp) => resp.json())
       .then((result) => {
         this.state.usersNames.set(user.user_id, result.data[0].display_name);
-        this.state.isSubscribed.set(user.user_id, false);
+        //this.state.isSubscribed.set(user.user_id, false);
+        this.props.onAddUsers(user.user_id);
       });
     }
     
     this.setState({ usersNames: this.state.usersNames });
-    this.setState({ isSubscribed: this.state.isSubscribed });
+    //this.setState({ isSubscribed: this.state.isSubscribed });
   }
 
   subscribe = (userId, value, index) => {
@@ -100,8 +102,9 @@ class App extends Component {
         return instance.subscribe(userId, {from: account});
       })
     }).then((result) => {
-      this.state.isSubscribed.set(userId, true);
-      this.setState({ isSubscribed: this.state.isSubscribed });
+      //this.state.isSubscribed.set(userId, true);
+      //this.setState({ isSubscribed: this.state.isSubscribed });
+      this.props.onSubscribe(userId);
     });
   }
 
@@ -123,7 +126,7 @@ class App extends Component {
                   viewer_count={stream.viewer_count}
                   user_id={stream.user_id}
                   subscribe={this.subscribe} 
-                  isSubscribed={this.state.isSubscribed} />
+                  isSubscribed={this.props.isSubscribed} />
                 ))}
             </Card.Group>
         </main>
@@ -132,4 +135,17 @@ class App extends Component {
   }
 }
 
-export default App
+const mapStateToProps = state => {
+  return {
+    isSubscribed : state.isSubscribed
+  };
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onAddUsers: (userId) => dispatch({type: 'ADDUSERS', userId}),
+    onSubscribe: (userId) => dispatch({type: 'SUBSCRIBE', userId})
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(App)
