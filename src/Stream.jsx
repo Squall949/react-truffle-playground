@@ -26,22 +26,6 @@ export default class Stream extends Component {
         this.props.subscribe(userId, this.state.value, index);
         this.close();
     }
-    
-    checkDisabled = () => {
-        if (this.props.isSubscribed) {
-            return this.props.isSubscribed.get(this.props.user_id);
-        }
-
-        return false;
-    }
-
-    displayBtnLabel = () => {
-        if (this.props.isSubscribed && this.props.isSubscribed.get(this.props.user_id)) {
-            return 'Subscribed';
-        }
-
-        return 'Subscribe';
-    }
 
     render() {
         return (
@@ -66,8 +50,8 @@ export default class Stream extends Component {
                         <Icon name='user' />
                         {this.props.viewer_count} Views
                         <span className="magn-left">
-                            <Modal trigger={<Button disabled={this.checkDisabled()} onClick={this.show}>
-                            {this.displayBtnLabel()}</Button>} 
+                            <Modal trigger={<Button disabled={this.props.isSubscribed.get(this.props.user_id)} onClick={this.show}>
+                            {this.props.isSubscribed.get(this.props.user_id)?'Subscribed':'Subscribe'}</Button>}
                             open={this.state.open} onClose={this.close}>
                                 <Modal.Content>
                                     How much Ether would you give?
